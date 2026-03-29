@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport"
+    content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <title>返回循环整蛊 · 幸运抽奖主题</title>
+  <style>
+    :root {
+      --vh: 100dvh;
+      --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", Roboto, system-ui, Arial, sans-serif;
+      --green: #2AC845;
+      --red: #FF3B30;
+      --bg: #0b0d10;
+      --card: #1c1c1e;
+      --muted: #c7c7cc;
+      --text: #fff;
+    }
+
+    * {
+      box-sizing: border-box
+    }
+
+    html,
+    body {
+      height: 100%
+    }
+
+    body {
+      margin: 0;
+      font-family: var(--font);
+      color: var(--text);
+      background: #000;
+      overflow: hidden;
+      touch-action: none;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    .app {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: var(--vh);
+      background: transparent;
+      padding: calc(env(safe-area-inset-top) + 14px) 18px calc(env(safe-area-inset-bottom) + 18px) 18px;
+      display: flex;
+      flex-direction: column;
+      z-index: 0;
+    }
+
+    .app::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1080 1920'><defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='%23b51511'/><stop offset='1' stop-color='%238f0f0c'/></linearGradient></defs><rect width='1080' height='1920' fill='url(%23g)'/><g opacity='0.9'><circle cx='100' cy='220' r='7' fill='%23ffd54a'/><circle cx='240' cy='560' r='6' fill='%23ff6f61'/><rect x='520' y='320' width='12' height='12' fill='%2370e000'/><rect x='860' y='860' width='10' height='10' fill='%23ffd700'/><path d='M900 420 l14 24 -28 0 z' fill='%23ff4d6d'/><path d='M320 1280 l16 24 -32 0 z' fill='%236be585'/><circle cx='820' cy='300' r='5' fill='%23ffd54a'/><circle cx='260' cy='980' r='5' fill='%2345c4b0'/></g><text x='50%25' y='18%25' text-anchor='middle' font-size='140' fill='%23ffd54a' font-family='-apple-system,BlinkMacSystemFont,PingFang SC,Roboto,Arial' font-weight='900'>幸运抽奖</text></svg>") center/cover no-repeat;
+      filter: saturate(110%);
+      z-index: 0;
+    }
+
+    .app::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(1200px 1200px at 50% 0%, rgba(255, 255, 255, .12), transparent), linear-gradient(180deg, rgba(11, 13, 16, .15) 0%, rgba(17, 20, 24, .55) 100%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .app>* {
+      position: relative;
+      z-index: 1;
+    }
+
+    .banner {
+      background: rgba(28, 28, 30, .92);
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-size: 13px;
+      color: #fff;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, .35)
+    }
+
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 18px;
+      padding: 6vh 0
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 28px;
+      letter-spacing: .3px
+    }
+
+    p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: 14px
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 160px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      background: #0a84ff;
+      color: #fff;
+      font-weight: 700;
+      font-size: 15px;
+      box-shadow: 0 10px 22px rgba(10, 132, 255, .25);
+    }
+
+    .footer {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 12px
+    }
+
+    .hidden {
+      display: none !important
+    }
+
+    /* 屏组：同位叠层，单屏 .show 可见 */
+    .screens {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .screens.active {
+      pointer-events: auto;
+    }
+
+    .screen {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 24px;
+    }
+
+    .screen.show {
+      display: flex
+    }
+
+    /* 屏 1：系统无响应弹窗 */
+    .dialog {
+      width: min(88vw, 380px);
+      background: rgba(28, 28, 30, .96);
+      border-radius: 14px;
+      color: #fff;
+      text-align: center;
+      padding: 14px 12px;
+      box-shadow: 0 16px 42px rgba(0, 0, 0, .5)
+    }
+
+    .dialog h3 {
+      margin: 8px 0 6px 0;
+      font-size: 18px
+    }
+
+    .dialog p {
+      font-size: 14px;
+      color: #e7e7ea
+    }
+
+    .row {
+      display: flex;
+      border-top: 0.5px solid rgba(255, 255, 255, .12);
+      margin-top: 12px
+    }
+
+    .row .cell {
+      flex: 1;
+      padding: 12px 0;
+      font-weight: 700
+    }
+
+    .row .cell+.cell {
+      border-left: 0.5px solid rgba(255, 255, 255, .12)
+    }
+
+    .danger {
+      color: #ff453a
+    }
+
+    /* 屏 2：红包整蛊 */
+    .hongbao {
+      width: min(86vw, 420px);
+      background: linear-gradient(180deg, #b51511 0%, #8f0f0c 100%);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 20px 60px rgba(181, 21, 17, .35);
+      position: relative;
+    }
+
+    .hongbao .cap {
+      height: 110px;
+      border-radius: 14px;
+      background: linear-gradient(180deg, #e8b92a, #d49b11);
+      display: grid;
+      place-items: center;
+      color: #7a4e00;
+      font-weight: 900;
+      letter-spacing: .2px;
+      text-shadow: 0 1px rgba(255, 255, 255, .3)
+    }
+
+    .hongbao .body {
+      padding: 16px 8px;
+      text-align: center
+    }
+
+    .hongbao .open {
+      margin: 8px auto 0 auto;
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #ffd54a 0%, #ffb300 60%, #f39c12 100%);
+      display: grid;
+      place-items: center;
+      font-size: 18px;
+      font-weight: 900;
+      color: #7a4e00;
+      box-shadow: 0 10px 26px rgba(255, 179, 0, .35), inset 0 2px rgba(255, 255, 255, .6);
+    }
+
+    .ash {
+      position: absolute;
+      inset: -8px;
+      border-radius: 20px;
+      border: 2px dashed rgba(255, 255, 255, .08);
+      pointer-events: none
+    }
+
+    /* 屏 3：屏幕碎裂 */
+    .crack-wrap {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background: #000
+    }
+
+    .crack-wrap::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(600px 600px at 50% 50%, rgba(255, 255, 255, .06), transparent 60%), radial-gradient(800px 800px at 35% 30%, rgba(255, 255, 255, .04), transparent 60%);
+    }
+
+    .cracks {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        conic-gradient(from 0deg at 50% 50%, transparent 0 60deg, rgba(255, 255, 255, .9) 60deg 61deg, transparent 61deg 120deg, rgba(255, 255, 255, .8) 120deg 121deg, transparent 121deg 180deg, rgba(255, 255, 255, .85) 180deg 181deg, transparent 181deg),
+        repeating-linear-gradient(45deg, rgba(255, 255, 255, .8) 0 2px, transparent 2px 6px);
+      mix-blend-mode: screen;
+      opacity: .7;
+      filter: blur(.2px) contrast(120%);
+      mask: radial-gradient(ellipse at 50% 50%, black 0 45%, transparent 60%);
+    }
+
+    .crack-text {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 18%;
+      text-align: center;
+      color: #cfcfcf;
+      font-size: 14px
+    }
+
+    /* 屏 4：文案 */
+    .big {
+      font-size: 8.5vw;
+      line-height: 1.2;
+      font-weight: 900;
+      letter-spacing: .5px;
+      text-shadow: 0 10px 30px rgba(0, 0, 0, .5)
+    }
+
+    .sub {
+      margin-top: 10px;
+      color: #e7e7ea
+    }
+
+    /* Toast */
+    .toast-root {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 60
+    }
+
+    .toast {
+      position: absolute;
+      left: 50%;
+      top: 18%;
+      transform: translateX(-50%) translateY(-16px);
+      background: rgba(30, 30, 32, .95);
+      padding: 12px 14px;
+      border-radius: 12px;
+      font-size: 14px;
+      opacity: 0;
+      transition: .2s;
+      max-width: 75vw;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, .35)
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0)
+    }
+
+    /* 收尾页 */
+    .ending {
+      position: fixed;
+      inset: 0;
+      background: #000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 24px;
+      z-index: 80
+    }
+
+    .ending.show {
+      display: flex
+    }
+
+    .ending h2 {
+      margin: 0 0 10px 0;
+      font-size: 30px
+    }
+
+    .ending p {
+      margin: 6px 0;
+      color: #e5e5e7
+    }
+
+    .ending .btn {
+      background: #34C759
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app" id="app">
+    <div class="banner" id="banner">使用声明：本页为纯前端本地运行的娱乐整蛊，无任何数据收集或上传；仅用于亲友间友好娱乐。退出方式：长按屏幕任意位置 3 秒，立即解除返回拦截并显示收尾页。</div>
+    <div class="main" id="main">
+      <h1>幸运抽奖活动</h1>
+      <p>据说只有 1% 的人能领到隐藏彩蛋，快试试吧！</p>
+      <div class="btn" id="fakeAction">立即查看</div>
+    </div>
+    <div class="footer">提示：尝试使用浏览器/微信的返回操作试试</div>
+  </div>
+
+  <div class="screens" id="screens">
+    <!-- 系统无响应 -->
+    <section class="screen" id="scr-system">
+      <div class="dialog">
+        <h3>系统无响应</h3>
+        <p>检测到页面未响应操作，是否继续等待？</p>
+        <div class="row">
+          <div class="cell">等待</div>
+          <div class="cell danger">关闭</div>
+        </div>
+      </div>
+    </section>
+    <!-- 红包整蛊 -->
+    <section class="screen" id="scr-hongbao">
+      <div class="hongbao">
+        <div class="cap">恭喜发财</div>
+        <div class="body">
+          <p>来自「神秘好友」的红包</p>
+          <div class="open" id="openHB">开</div>
+        </div>
+        <div class="ash"></div>
+      </div>
+    </section>
+    <!-- 屏幕碎裂 -->
+    <section class="screen" id="scr-crack">
+      <div class="crack-wrap">
+        <div class="cracks"></div>
+        <div class="crack-text">屏幕貌似有点… 开个玩笑 😁</div>
+      </div>
+    </section>
+    <!-- 文案 -->
+    <section class="screen" id="scr-text">
+      <div>
+        <div class="big">好运连连！</div>
+        <div class="sub">返回越多越快乐，但永远有温柔的退出方式</div>
+      </div>
+    </section>
+  </div>
+
+  <div class="toast-root" id="toastRoot"></div>
+
+  <div class="ending" id="ending">
+    <div>
+      <h2>谢谢参与</h2>
+      <p>整蛊已结束。现在你可以正常返回或点击微信右上角关闭网页。</p>
+      <div class="btn" id="replay">再来一次</div>
+    </div>
+  </div>
+
+  <script>
+    // 视口高度适配，最大化全屏占用，隐藏地址栏
+    function setVH() {
+      const h = window.innerHeight || document.documentElement.clientHeight;
+      document.documentElement.style.setProperty('--vh', h + 'px');
+      setTimeout(() => { try { window.scrollTo(0, 1); } catch (e) { } }, 50);
+    }
+
+    const screens = ['scr-system', 'scr-hongbao', 'scr-crack', 'scr-text'];
+    let idx = -1;                   // 当前整蛊索引（首次触发显示第 0 项）
+    let active = true;              // 是否拦截返回
+    let longPressTimer = 0;         // 长按检测
+    const toastRoot = document.getElementById('toastRoot');
+    const ending = document.getElementById('ending');
+    const screensRoot = document.getElementById('screens');
+
+    function showToast(text) {
+      const el = document.createElement('div');
+      el.className = 'toast';
+      el.textContent = text;
+      toastRoot.appendChild(el);
+      requestAnimationFrame(() => el.classList.add('show'));
+      setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 220); }, 1600);
+    }
+
+    function showScreen(id) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('show'));
+      const el = document.getElementById(id);
+      if (el) {
+        el.classList.add('show');
+        screensRoot.classList.add('active');
+      }
+    }
+    function hideScreens() {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('show'));
+      screensRoot.classList.remove('active');
+    }
+
+    // 单哨兵返回循环：栈中只保留 1 个哨兵条目，避免无限增长
+    function pushSentinel() {
+      try { history.pushState({ sentinel: true }, '', location.href); } catch (e) { }
+    }
+    function onPopState(ev) {
+      if (!active) return;
+      idx = (idx + 1) % screens.length;
+      showScreen(screens[idx]);
+      pushSentinel(); // 立刻补回哨兵，维持单条目循环
+    }
+
+    function startLoop() {
+      active = true;
+      window.addEventListener('popstate', onPopState);
+      pushSentinel();
+    }
+    function stopLoop() {
+      active = false;
+      window.removeEventListener('popstate', onPopState);
+    }
+
+    // 退出整蛊：停止拦截，展示收尾页；用户可正常返回或关闭
+    function endPrank() {
+      stopLoop();
+      hideScreens();
+      ending.classList.add('show');
+    }
+    function replayPrank() {
+      ending.classList.remove('show');
+      idx = -1; // 下次返回先进入 scr-system
+      startLoop();
+      showToast('返回试试看～');
+    }
+
+    // 交互与安全退出
+    function bind() {
+      const openHB = document.getElementById('openHB');
+      openHB.addEventListener('touchstart', e => { e.preventDefault(); showToast('拆红包失败：再试一次！'); }, { passive: false });
+      openHB.addEventListener('click', e => { e.preventDefault(); showToast('拆红包失败：再试一次！'); }, true);
+
+      const fakeBtn = document.getElementById('fakeAction');
+      fakeBtn.addEventListener('touchstart', e => {
+        e.preventDefault();
+        showToast('加载中… 请稍候');
+        idx = (idx + 1) % screens.length;
+        showScreen(screens[idx]);
+        pushSentinel();
+      }, { passive: false });
+      fakeBtn.addEventListener('click', e => {
+        e.preventDefault();
+        showToast('加载中… 请稍候');
+        idx = (idx + 1) % screens.length;
+        showScreen(screens[idx]);
+        pushSentinel();
+      }, true);
+
+      // 长按 3 秒无条件退出
+      document.addEventListener('touchstart', () => {
+        clearTimeout(longPressTimer);
+        longPressTimer = setTimeout(() => endPrank(), 3000);
+      }, { passive: true });
+      const cancelLP = () => clearTimeout(longPressTimer);
+      document.addEventListener('touchend', cancelLP, { passive: true });
+      document.addEventListener('touchcancel', cancelLP, { passive: true });
+      document.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+      document.addEventListener('mousedown', () => {
+        clearTimeout(longPressTimer);
+        longPressTimer = setTimeout(() => endPrank(), 3000);
+      });
+      document.addEventListener('mouseup', cancelLP);
+      document.addEventListener('mouseleave', cancelLP);
+      document.addEventListener('keydown', e => { if (e.key === 'Escape') endPrank(); });
+
+      // 再来一次
+      document.getElementById('replay').addEventListener('touchstart', e => { e.preventDefault(); replayPrank(); }, { passive: false });
+      document.getElementById('replay').addEventListener('click', e => { e.preventDefault(); replayPrank(); }, true);
+
+      // 尺寸与地址栏隐藏
+      window.addEventListener('resize', setVH);
+      window.addEventListener('orientationchange', setVH);
+    }
+
+    function init() {
+      setVH();
+      bind();
+      startLoop();
+      setTimeout(() => document.getElementById('banner').classList.add('hidden'), 2400);
+    }
+    init();
+  </script>
+</body>
+
+</html>

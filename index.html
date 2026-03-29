@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport"
+    content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <title>幸运抽奖桌面整蛊</title>
+  <style>
+    :root {
+      --icon: 72px;
+      --gap: 14px;
+      --side: 18px;
+      --status-h: 44px;
+      --dock-h: 96px;
+      --radius: 18px;
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      height: 100%;
+    }
+
+    body {
+      margin: 0;
+      background: linear-gradient(160deg, #8f0f0c 0%, #b51511 50%, #7a0c0a 100%);
+      color: #fff;
+      font-family: var(--font);
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    #app {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    #app::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      background:
+        url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1080 1920'><defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='%23b51511'/><stop offset='1' stop-color='%238f0f0c'/></linearGradient></defs><rect width='1080' height='1920' fill='url(%23g)'/><g opacity='0.9'><circle cx='120' cy='260' r='7' fill='%23ffd54a'/><circle cx='260' cy='560' r='6' fill='%23ff6f61'/><rect x='540' y='320' width='12' height='12' fill='%2370e000'/><rect x='860' y='860' width='10' height='10' fill='%23ffd700'/><path d='M900 420 l14 24 -28 0 z' fill='%23ff4d6d'/><path d='M320 1280 l16 24 -32 0 z' fill='%236be585'/><circle cx='820' cy='300' r='5' fill='%23ffd54a'/><circle cx='260' cy='980' r='5' fill='%2345c4b0'/></g><text x='50%25' y='14%25' text-anchor='middle' font-size='120' fill='%23ffd54a' font-family='-apple-system,BlinkMacSystemFont,PingFang SC,Roboto,Arial' font-weight='900'>幸运抽奖</text></svg>") center/cover no-repeat;
+      filter: saturate(110%);
+    }
+
+    #app>* {
+      position: relative;
+      z-index: 1;
+    }
+
+    .status-bar {
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: var(--status-h);
+      padding-top: env(safe-area-inset-top);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-left: 16px;
+      padding-right: 16px;
+      z-index: 20;
+      pointer-events: auto;
+    }
+
+    .status-time {
+      font-weight: 600;
+      font-size: 16px;
+      letter-spacing: 0.3px;
+    }
+
+    .status-icons {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .sig {
+      display: flex;
+      gap: 2px;
+      align-items: flex-end;
+    }
+
+    .sig i {
+      display: block;
+      width: 3px;
+      background: #fff;
+      opacity: .9;
+    }
+
+    .sig i:nth-child(1) {
+      height: 6px;
+      opacity: .5
+    }
+
+    .sig i:nth-child(2) {
+      height: 9px;
+      opacity: .6
+    }
+
+    .sig i:nth-child(3) {
+      height: 12px;
+      opacity: .8
+    }
+
+    .sig i:nth-child(4) {
+      height: 14px;
+      opacity: .95
+    }
+
+    .wifi {
+      width: 18px;
+      height: 12px;
+      position: relative;
+      opacity: .9;
+    }
+
+    .wifi:before,
+    .wifi:after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      border: 2px solid #fff;
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      clip-path: inset(0 0 50% 0);
+    }
+
+    .wifi:after {
+      width: 12px;
+      height: 12px;
+    }
+
+    .bat {
+      width: 26px;
+      height: 12px;
+      border: 2px solid #fff;
+      border-radius: 3px;
+      position: relative;
+      opacity: .9;
+    }
+
+    .bat:after {
+      content: "";
+      position: absolute;
+      right: -4px;
+      top: 3px;
+      width: 3px;
+      height: 6px;
+      background: #fff;
+      border-radius: 1px;
+    }
+
+    .bat-fill {
+      position: absolute;
+      left: 2px;
+      top: 2px;
+      bottom: 2px;
+      right: 8px;
+      background: #fff;
+      border-radius: 2px;
+    }
+
+    .homescreen {
+      position: absolute;
+      inset: 0;
+      padding-top: calc(var(--status-h) + env(safe-area-inset-top));
+      padding-bottom: calc(var(--dock-h) + env(safe-area-inset-bottom));
+    }
+
+    #iconsLayer {
+      position: absolute;
+      left: 0;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    .app {
+      position: absolute;
+      width: var(--icon);
+      height: calc(var(--icon) + 18px);
+      transform: translate3d(0, 0, 0);
+      will-change: transform;
+    }
+
+    .tile {
+      width: var(--icon);
+      height: var(--icon);
+      border-radius: 22%;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-size: calc(var(--icon) * 0.42);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, .25), inset 0 0 0 0.5px rgba(255, 255, 255, .2);
+      text-shadow: 0 1px 2px rgba(0, 0, 0, .35);
+    }
+
+    .label {
+      text-align: center;
+      font-size: 12px;
+      margin-top: 6px;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, .35);
+    }
+
+    .dock {
+      position: absolute;
+      left: 50%;
+      bottom: env(safe-area-inset-bottom);
+      transform: translateX(-50%);
+      width: min(92vw, 760px);
+      height: var(--dock-h);
+      background: rgba(255, 255, 255, .22);
+      border: 1px solid rgba(255, 255, 255, .28);
+      border-radius: 32px;
+      backdrop-filter: saturate(160%) blur(20px);
+      -webkit-backdrop-filter: saturate(160%) blur(20px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, .35), inset 0 1px rgba(255, 255, 255, .25);
+      z-index: 5;
+      pointer-events: none;
+    }
+
+    #toast {
+      position: fixed;
+      left: 0;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      pointer-events: none;
+      z-index: 50;
+    }
+
+    .toast {
+      position: absolute;
+      max-width: 70vw;
+      background: rgba(30, 30, 32, .92);
+      color: #fff;
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-size: 14px;
+      line-height: 1.3;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, .35);
+      transform: translate(-50%, -100%);
+      opacity: 0;
+      transition: opacity .2s ease, transform .2s ease;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translate(-50%, -110%);
+    }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      z-index: 60;
+    }
+
+    .overlay.show {
+      display: flex;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 520px;
+      background: rgba(255, 255, 255, .95);
+      color: #1c1c1e;
+      border-radius: 16px;
+      padding: 20px 18px;
+      box-shadow: 0 12px 36px rgba(0, 0, 0, .35);
+    }
+
+    .card h1 {
+      margin: 4px 0 8px 0;
+      font-size: 20px;
+    }
+
+    .card p {
+      margin: 6px 0;
+      font-size: 14px;
+      color: #333;
+    }
+
+    .card .tips {
+      margin-top: 10px;
+      padding-left: 14px;
+    }
+
+    .btn {
+      margin-top: 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 120px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      background: #007AFF;
+      color: #fff;
+      font-weight: 600;
+      font-size: 15px;
+    }
+
+    #ending {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(1200px 1200px at 50% 30%, rgba(255, 255, 255, .25), rgba(0, 0, 0, .35)), linear-gradient(180deg, #141e30 0%, #243b55 100%);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      z-index: 70;
+      padding: 24px;
+      text-align: center;
+    }
+
+    #ending.show {
+      display: flex;
+    }
+
+    #ending .inner {
+      max-width: 540px;
+    }
+
+    #ending h2 {
+      font-size: 28px;
+      margin: 0 0 10px 0;
+    }
+
+    #ending p {
+      margin: 6px 0 0 0;
+      color: #e7e7e7;
+    }
+
+    #ending .btn {
+      background: #34C759;
+    }
+
+    .landscape {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .68);
+      color: #fff;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 80;
+      text-align: center;
+      padding: 24px;
+    }
+
+    .landscape.show {
+      display: flex;
+    }
+
+    @media (max-width: 360px) {
+      :root {
+        --icon: 64px;
+        --gap: 12px;
+        --side: 14px;
+        --status-h: 42px;
+        --dock-h: 88px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app">
+    <div class="status-bar" id="statusBar">
+      <div class="status-time" id="clock">9:41</div>
+      <div class="status-icons">
+        <div class="sig"><i></i><i></i><i></i><i></i></div>
+        <div class="wifi"></div>
+        <div class="bat">
+          <div class="bat-fill" id="batFill"></div>
+        </div>
+      </div>
+    </div>
+    <div class="homescreen">
+      <div id="iconsLayer"></div>
+      <div class="dock"></div>
+    </div>
+    <div id="toast"></div>
+    <div class="overlay show" id="intro">
+      <div class="card">
+        <h1>使用声明与退出方式</h1>
+        <p>本页面为纯前端本地运行的娱乐整蛊小工具，无任何数据收集与上传。仅用于亲友间娱乐，勿用于商业用途。</p>
+        <div class="tips">
+          <p>玩法：模拟 iOS 桌面，图标会乱飞，点击会躲开并显示趣味文案。</p>
+          <p>退出方式：</p>
+          <p>• 长按屏幕任意位置 3 秒，立刻终止并复位</p>
+          <p>• 连续点击状态栏 5 次，立即解锁退出</p>
+        </div>
+        <div class="btn" id="startBtn">我已知晓，开始玩</div>
+      </div>
+    </div>
+    <div class="landscape" id="rotateTip">请竖屏体验</div>
+    <div id="ending">
+      <div class="inner">
+        <h2>谢谢参与</h2>
+        <p>整蛊结束，祝你好运连连。</p>
+        <div class="btn" id="replayBtn">再玩一次</div>
+      </div>
+    </div>
+  </div>
+  <script>
+    const iconsLayer = document.getElementById('iconsLayer');
+    const toastRoot = document.getElementById('toast');
+    const statusBar = document.getElementById('statusBar');
+    const intro = document.getElementById('intro');
+    const ending = document.getElementById('ending');
+    const rotateTip = document.getElementById('rotateTip');
+    const clock = document.getElementById('clock');
+    const startBtn = document.getElementById('startBtn');
+    const replayBtn = document.getElementById('replayBtn');
+
+    const jokes = [
+      '我不是很想被点开，但我可以被欣赏。',
+      '别追我，我害羞！',
+      '今天点不开，明天也点不开。',
+      '别点啦，我正在摸鱼。',
+      '已经很努力在躲了，还想点？',
+      '本应用今日特惠：只看不点。',
+      '你的手速再快一点就点不到我了。',
+      '我在减肥，先飞两圈消耗一下。',
+      '抽奖限定：点击免登录，照样点不开。',
+      '再点我就生气了，开玩笑的。',
+      '我只是个图标，不要为难我。'
+    ];
+
+    const apps = [
+      { name: '相册', bg: ['#ff9a9e', '#fad0c4'], g: '📸' },
+      { name: '设置', bg: ['#bdc3c7', '#2c3e50'], g: '⚙️' },
+      { name: '天气', bg: ['#00c6ff', '#0072ff'], g: '☀️' },
+      { name: '日历', bg: ['#fdfbfb', '#ebedee'], g: '📅' },
+      { name: '时钟', bg: ['#2c3e50', '#000000'], g: '🕒' },
+      { name: '信息', bg: ['#a8e063', '#56ab2f'], g: '💬' },
+      { name: '电话', bg: ['#56ab2f', '#a8e063'], g: '📞' },
+      { name: 'Safari', bg: ['#74ebd5', '#ACB6E5'], g: '🧭' },
+      { name: '音乐', bg: ['#ff9a9e', '#fecfef'], g: '🎵' },
+      { name: '相机', bg: ['#232526', '#414345'], g: '📷' },
+      { name: 'App Store', bg: ['#00d2ff', '#3a7bd5'], g: '🛍️' },
+      { name: '备忘录', bg: ['#fceabb', '#f8b500'], g: '📝' },
+      { name: '地图', bg: ['#e0c3fc', '#8ec5fc'], g: '🗺️' },
+      { name: '文件', bg: ['#e0eafc', '#cfdef3'], g: '📁' },
+      { name: '健康', bg: ['#ffdde1', '#ee9ca7'], g: '❤️' },
+      { name: '邮件', bg: ['#a1c4fd', '#c2e9fb'], g: '✉️' },
+      { name: '照片', bg: ['#f6d365', '#fda085'], g: '🌈' },
+      { name: '提醒事项', bg: ['#cfd9df', '#e2ebf0'], g: '🔔' },
+      { name: '钱包', bg: ['#414345', '#232526'], g: '💳' },
+      { name: '播客', bg: ['#d299c2', '#fef9d7'], g: '🎙️' }
+    ];
+
+    let items = [];
+    let rafId = 0;
+    let running = false;
+    let longPressTimer = null;
+    let statusTapTimes = [];
+
+    function updateClock() {
+      const d = new Date();
+      const h = String(d.getHours()).padStart(2, '0');
+      const m = String(d.getMinutes()).padStart(2, '0');
+      clock.textContent = h + ':' + m;
+    }
+    updateClock();
+    setInterval(updateClock, 10000);
+
+    function sizeLayout() {
+      const vw = window.innerWidth;
+      const statusH = statusBar.offsetHeight || 44;
+      const dockH = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--dock-h')) || 96;
+      const safeTop = 0;
+      const safeBottom = 0;
+      const usableH = window.innerHeight - statusH - dockH - safeTop - safeBottom;
+      const side = Math.max(12, Math.min(18, Math.round(vw * 0.045)));
+      const cols = 4;
+      let icon = Math.max(58, Math.min(76, Math.floor((vw - side * 2) / cols - 12)));
+      let gap = Math.max(10, Math.min(16, Math.round(icon * 0.22)));
+      document.documentElement.style.setProperty('--icon', icon + 'px');
+      document.documentElement.style.setProperty('--gap', gap + 'px');
+      document.documentElement.style.setProperty('--side', side + 'px');
+      document.documentElement.style.setProperty('--status-h', statusH + 'px');
+      positionGrid(statusH, dockH, side, gap, icon, cols, usableH);
+    }
+
+    function positionGrid(statusH, dockH, side, gap, icon, cols, usableH) {
+      const topY = statusH + 12;
+      const leftX = side;
+      const rowStep = icon + 26 + gap;
+      const colStep = icon + gap;
+      items.forEach((it, i) => {
+        const row = Math.floor(i / cols);
+        const col = i % cols;
+        it.gx = Math.round(leftX + col * colStep);
+        it.gy = Math.round(topY + row * rowStep);
+        if (!running) {
+          it.x = it.gx;
+          it.y = it.gy;
+          applyTransform(it);
+        }
+      });
+    }
+
+    function createIcons() {
+      iconsLayer.innerHTML = '';
+      items = apps.map((cfg, i) => {
+        const el = document.createElement('div');
+        el.className = 'app';
+        const tile = document.createElement('div');
+        tile.className = 'tile';
+        tile.style.background = `linear-gradient(135deg, ${cfg.bg[0]}, ${cfg.bg[1]})`;
+        const glyph = document.createElement('div');
+        glyph.textContent = cfg.g;
+        glyph.style.transform = 'translateY(2px)';
+        tile.appendChild(glyph);
+        const label = document.createElement('div');
+        label.className = 'label';
+        label.textContent = cfg.name;
+        el.appendChild(tile);
+        el.appendChild(label);
+        iconsLayer.appendChild(el);
+        const it = {
+          el,
+          tile,
+          x: 0, y: 0,
+          vx: (Math.random() * 1.4 - 0.7),
+          vy: (Math.random() * 1.4 - 0.7),
+          gx: 0, gy: 0,
+          size: 0
+        };
+        bindIconEvents(it);
+        return it;
+      });
+      sizeLayout();
+    }
+
+    function bindIconEvents(it) {
+      it.el.addEventListener('touchstart', ev => {
+        if (!running) { ev.preventDefault(); return; }
+        const t = ev.touches[0];
+        const rect = it.el.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        let dx = cx - t.clientX;
+        let dy = cy - t.clientY;
+        const dist = Math.max(0.001, Math.hypot(dx, dy));
+        dx /= dist; dy /= dist;
+        const boost = 3 + Math.random() * 1.5;
+        it.vx = dx * boost;
+        it.vy = dy * boost;
+        it.x += it.vx * 4;
+        it.y += it.vy * 4;
+        showToast(randomJoke(), t.clientX, t.clientY - 12);
+        ev.preventDefault();
+      }, { passive: false });
+      it.el.addEventListener('click', ev => ev.preventDefault(), true);
+    }
+
+    function randomJoke() {
+      return jokes[(Math.random() * jokes.length) | 0];
+    }
+
+    function applyTransform(it) {
+      it.el.style.transform = `translate3d(${it.x}px,${it.y}px,0)`;
+    }
+
+    function bounds() {
+      const icon = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--icon')) || 72;
+      const l = 6;
+      const r = window.innerWidth - icon - 6;
+      const t = (statusBar.offsetHeight || 44) + 6;
+      const b = window.innerHeight - (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--dock-h')) || 96) - icon - 6 - 6;
+      return { l, r, t, b, icon };
+    }
+
+    function animate() {
+      const { l, r, t, b } = bounds();
+      const drag = 0.998;
+      const wobble = 0.06;
+      items.forEach(it => {
+        it.vx += (Math.random() - 0.5) * wobble;
+        it.vy += (Math.random() - 0.5) * wobble;
+        it.x += it.vx;
+        it.y += it.vy;
+        if (it.x < l) { it.x = l; it.vx = Math.abs(it.vx) * 0.9; }
+        if (it.x > r) { it.x = r; it.vx = -Math.abs(it.vx) * 0.9; }
+        if (it.y < t) { it.y = t; it.vy = Math.abs(it.vy) * 0.9; }
+        if (it.y > b) { it.y = b; it.vy = -Math.abs(it.vy) * 0.9; }
+        it.vx *= drag;
+        it.vy *= drag;
+        applyTransform(it);
+      });
+      if (running) rafId = requestAnimationFrame(animate);
+    }
+
+    function start() {
+      running = true;
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(animate);
+    }
+
+    function stopAndReset() {
+      if (!running && ending.classList.contains('show')) return;
+      running = false;
+      cancelAnimationFrame(rafId);
+      items.forEach(it => {
+        it.el.style.transition = 'transform .45s cubic-bezier(.2,.8,.2,1)';
+        it.x = it.gx;
+        it.y = it.gy;
+        applyTransform(it);
+        setTimeout(() => { it.el.style.transition = ''; }, 500);
+      });
+      setTimeout(() => {
+        ending.classList.add('show');
+      }, 480);
+    }
+
+    function showToast(text, x, y) {
+      const el = document.createElement('div');
+      el.className = 'toast';
+      el.textContent = text;
+      toastRoot.appendChild(el);
+      const px = Math.max(20, Math.min(window.innerWidth - 20, x));
+      const py = Math.max(60, Math.min(window.innerHeight - 80, y));
+      el.style.left = px + 'px';
+      el.style.top = py + 'px';
+      requestAnimationFrame(() => el.classList.add('show'));
+      setTimeout(() => {
+        el.classList.remove('show');
+        setTimeout(() => el.remove(), 220);
+      }, 1400);
+    }
+
+    function bindGlobal() {
+      document.addEventListener('touchstart', e => {
+        clearTimeout(longPressTimer);
+        longPressTimer = setTimeout(() => {
+          stopAndReset();
+        }, 3000);
+      }, { passive: true });
+      const cancelLP = () => clearTimeout(longPressTimer);
+      document.addEventListener('touchend', cancelLP, { passive: true });
+      document.addEventListener('touchcancel', cancelLP, { passive: true });
+      document.addEventListener('touchmove', e => {
+        e.preventDefault();
+      }, { passive: false });
+      statusBar.addEventListener('touchstart', () => {
+        const now = performance.now();
+        statusTapTimes.push(now);
+        statusTapTimes = statusTapTimes.filter(t => now - t < 2500);
+        if (statusTapTimes.length >= 5) {
+          statusTapTimes = [];
+          stopAndReset();
+        }
+      }, { passive: true });
+      window.addEventListener('resize', () => {
+        const isLandscape = window.innerWidth > window.innerHeight;
+        rotateTip.classList.toggle('show', isLandscape);
+        sizeLayout();
+      });
+    }
+
+    function init() {
+      createIcons();
+      bindGlobal();
+      const isLandscape = window.innerWidth > window.innerHeight;
+      rotateTip.classList.toggle('show', isLandscape);
+    }
+
+    startBtn.addEventListener('click', () => {
+      intro.classList.remove('show');
+      setTimeout(() => start(), 100);
+    });
+    replayBtn.addEventListener('click', () => {
+      ending.classList.remove('show');
+      items.forEach(it => {
+        it.vx = (Math.random() * 1.4 - 0.7);
+        it.vy = (Math.random() * 1.4 - 0.7);
+      });
+      start();
+    });
+
+    init();
+  </script>
+</body>
+
+</html>

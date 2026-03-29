@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>微信语音来电 · 活动彩蛋</title>
+<style>
+  :root{
+    --vh: 100dvh;
+    --radius: 18px;
+    --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", Roboto, system-ui, Arial, sans-serif;
+    --green:#2AC845;
+    --red:#FF3B30;
+    --muted:#9aa0a6;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    font-family:var(--font);
+    background:#000;
+    color:#fff;
+    -webkit-touch-callout:none;
+    -webkit-tap-highlight-color:transparent;
+    user-select:none;
+    overflow:hidden;
+    touch-action:none;
+  }
+  .screen{
+    position:fixed; inset:0;
+    width:100vw; height:var(--vh);
+    background: radial-gradient(1200px 1200px at 50% 0%, rgba(255,255,255,.12), transparent), linear-gradient(180deg,#0b0d10 0%,#111418 100%);
+    padding: calc(env(safe-area-inset-top) + 12px) 18px calc(env(safe-area-inset-bottom) + 24px) 18px;
+    display:flex; flex-direction:column; align-items:center; justify-content:space-between;
+  }
+  .top{
+    width:100%;
+    display:flex; align-items:center; justify-content:space-between;
+    opacity:.9;
+  }
+  .title{
+    font-size:14px; letter-spacing:.2px; color:#eaeaea;
+  }
+  .net{
+    display:flex; align-items:center; gap:8px; color:#cfcfcf; font-size:12px;
+  }
+  .bars{display:flex; gap:2px; align-items:flex-end}
+  .bars i{display:block; width:3px; background:#cfcfcf}
+  .bars i:nth-child(1){height:6px; opacity:.5}
+  .bars i:nth-child(2){height:9px; opacity:.6}
+  .bars i:nth-child(3){height:12px; opacity:.8}
+  .bars i:nth-child(4){height:14px; opacity:.95}
+  .center{
+    flex:1; width:100%;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:16px; padding: 6vh 0;
+  }
+  .avatar-wrap{
+    position:relative; width:128px; height:128px;
+  }
+  .avatar{
+    width:128px; height:128px; border-radius:50%;
+    background: radial-gradient(circle at 35% 30%, #3ddc84 0%, #1e8e3e 60%, #146c34 100%);
+    display:grid; place-items:center; font-size:42px; font-weight:700;
+    box-shadow: 0 10px 30px rgba(0,0,0,.4), inset 0 2px 8px rgba(255,255,255,.15);
+  }
+  .ring, .ring2{
+    position:absolute; inset:-8px;
+    border-radius:50%;
+    border:2px solid rgba(42,200,69,.45);
+    animation: pulse 2s ease-out infinite;
+  }
+  .ring2{ inset:-18px; border-color: rgba(42,200,69,.25); animation-delay:.6s }
+  @keyframes pulse{
+    0%{ transform:scale(.85); opacity:.9 }
+    60%{ transform:scale(1.1); opacity:.3 }
+    100%{ transform:scale(1.2); opacity:0 }
+  }
+  .name{ font-size:28px; font-weight:700; letter-spacing:.5px }
+  .subtitle{ font-size:14px; color:#cfcfcf }
+  .actions{
+    width:100%;
+    display:flex; align-items:flex-end; justify-content:center; gap:48px;
+    padding-bottom: 2vh;
+  }
+  .btn{
+    display:flex; flex-direction:column; align-items:center; gap:10px;
+  }
+  .circle{
+    width:76px; height:76px; border-radius:50%;
+    display:grid; place-items:center;
+    box-shadow: 0 8px 24px rgba(0,0,0,.45), inset 0 1px rgba(255,255,255,.25);
+  }
+  .circle.green{ background: linear-gradient(180deg,#2BD24A,#1fb43a) }
+  .circle.red{ background: linear-gradient(180deg,#FF4D43,#E22B22) }
+  .label{ font-size:12px; color:#eaeaea }
+  .icon{
+    width:28px; height:28px; fill:#fff; opacity:.98;
+    transform: rotate(0deg);
+  }
+  .toast-root{ position:fixed; inset:0; pointer-events:none; z-index:60 }
+  .toast{
+    position:absolute; left:50%; top:18%;
+    transform: translateX(-50%) translateY(-20px);
+    background: rgba(30,30,32,.95); color:#fff;
+    padding:12px 14px; border-radius:12px; font-size:14px; line-height:1.3;
+    opacity:0; transition: transform .2s ease, opacity .2s ease;
+    max-width: 75vw; text-align:center; box-shadow: 0 6px 18px rgba(0,0,0,.35);
+  }
+  .toast.show{ opacity:1; transform: translateX(-50%) translateY(0) }
+  .notice{
+    position:fixed; left:12px; right:12px; top: calc(env(safe-area-inset-top) + 10px);
+    z-index:70; display:none;
+  }
+  .notice.show{ display:block }
+  .notice .card{
+    background: rgba(28,28,30,.92); color:#fff; border-radius:14px; padding:12px 14px; font-size:13px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.35);
+  }
+  .ending{
+    position:fixed; inset:0; z-index:80; display:none; align-items:center; justify-content:center; text-align:center;
+    padding:24px; color:#fff; background:#000;
+  }
+  .ending.show{ display:flex }
+  .ending .inner{ max-width:560px }
+  .ending h2{ margin:0 0 10px 0; font-size:30px }
+  .ending p{ margin:6px 0; color:#e5e5e7 }
+  .ending .btn-close{ margin-top:14px; display:inline-flex; align-items:center; justify-content:center; padding:12px 18px; background:#34C759; border-radius:12px; font-weight:700 }
+  .accepted{
+    position:fixed; inset:0; z-index:75; background:#000; color:#fff; display:none; align-items:center; justify-content:center; text-align:center; padding:24px;
+  }
+  .accepted.show{ display:flex }
+  .accepted h1{ font-size:34px; margin:0; line-height:1.35 }
+</style>
+</head>
+<body>
+  <div class="screen" id="screen">
+    <div class="top">
+      <div class="title">微信语音通话</div>
+      <div class="net">
+        <div class="bars"><i></i><i></i><i></i><i></i></div>
+        <span>通过移动网络</span>
+      </div>
+    </div>
+    <div class="center">
+      <div class="avatar-wrap">
+        <div class="ring"></div>
+        <div class="ring2"></div>
+        <div class="avatar" id="avatar">WX</div>
+      </div>
+      <div class="name" id="callee">微信好友</div>
+      <div class="subtitle">微信来电</div>
+    </div>
+    <div class="actions">
+      <div class="btn" id="btnHang">
+        <div class="circle red">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4.5 12.2c3.5-3.6 11-3.6 14.5 0 .6.6.6 1.6-.1 2.2l-2 1.8c-.6.6-1.6.6-2.2.1-1.9-1.5-4-1.6-6.1 0-.6.5-1.6.4-2.2-.1l-2-1.8c-.7-.6-.7-1.6-.1-2.2z"/>
+          </svg>
+        </div>
+        <div class="label">挂断</div>
+      </div>
+      <div class="btn" id="btnAccept">
+        <div class="circle green">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" style="transform:rotate(180deg)">
+            <path d="M4.5 12.2c3.5-3.6 11-3.6 14.5 0 .6.6.6 1.6-.1 2.2l-2 1.8c-.6.6-1.6.6-2.2.1-1.9-1.5-4-1.6-6.1 0-.6.5-1.6.4-2.2-.1l-2-1.8c-.7-.6-.7-1.6-.1-2.2z"/>
+          </svg>
+        </div>
+        <div class="label">接听</div>
+      </div>
+    </div>
+  </div>
+  <div class="toast-root" id="toastRoot"></div>
+  <div class="notice show" id="notice"><div class="card">使用声明：本页为纯前端本地模拟，无任何数据收集或上传，仅用于亲友间善意娱乐。退出方式：长按屏幕任意位置 3 秒，立即结束整蛊并展示收尾页。</div></div>
+  <div class="accepted" id="accepted"><h1>惊喜彩蛋！上当啦哈哈哈哈</h1></div>
+  <div class="ending" id="ending">
+    <div class="inner">
+      <h2>谢谢参与</h2>
+      <p>整蛊已结束，感谢配合。可点击微信右上角 ··· 关闭网页。</p>
+      <div class="btn-close" id="replay">再来一次</div>
+    </div>
+  </div>
+<script>
+  const screenEl = document.getElementById('screen');
+  const btnAccept = document.getElementById('btnAccept');
+  const btnHang = document.getElementById('btnHang');
+  const toastRoot = document.getElementById('toastRoot');
+  const accepted = document.getElementById('accepted');
+  const ending = document.getElementById('ending');
+  const notice = document.getElementById('notice');
+  const replay = document.getElementById('replay');
+
+  let vibTimer = 0;
+  let longPressTimer = 0;
+  let running = true;
+
+  function setVH(){
+    const h = window.innerHeight || document.documentElement.clientHeight;
+    document.documentElement.style.setProperty('--vh', h + 'px');
+    setTimeout(()=>window.scrollTo(0,1), 50);
+  }
+
+  function vibratePattern(){
+    if (!running) return;
+    try{
+      if (navigator.vibrate) {
+        navigator.vibrate([180,120,180,600]);
+      }
+    }catch(e){}
+  }
+
+  function startVibrateLoop(){
+    clearInterval(vibTimer);
+    vibratePattern();
+    vibTimer = setInterval(vibratePattern, 1600);
+  }
+
+  function showToast(text){
+    const el = document.createElement('div');
+    el.className = 'toast';
+    el.textContent = text;
+    toastRoot.appendChild(el);
+    requestAnimationFrame(()=> el.classList.add('show'));
+    setTimeout(()=>{
+      el.classList.remove('show');
+      setTimeout(()=> el.remove(), 220);
+    }, 1500);
+  }
+
+  function acceptCall(){
+    if (!running) return;
+    running = false;
+    clearInterval(vibTimer);
+    accepted.classList.add('show');
+  }
+
+  function hangupCall(){
+    if (!running) return;
+    showToast('别挂呀~活动彩蛋！');
+  }
+
+  function endPrank(){
+    running = false;
+    clearInterval(vibTimer);
+    accepted.classList.remove('show');
+    ending.classList.add('show');
+  }
+
+  function replayPrank(){
+    ending.classList.remove('show');
+    running = true;
+    startVibrateLoop();
+  }
+
+  function bindEvents(){
+    btnAccept.addEventListener('touchstart', e=>{ e.preventDefault(); acceptCall(); }, {passive:false});
+    btnHang.addEventListener('touchstart', e=>{ e.preventDefault(); hangupCall(); }, {passive:false});
+    btnAccept.addEventListener('click', e=>{ e.preventDefault(); acceptCall(); }, true);
+    btnHang.addEventListener('click', e=>{ e.preventDefault(); hangupCall(); }, true);
+    document.addEventListener('touchmove', e=>{ e.preventDefault(); }, {passive:false});
+    document.addEventListener('touchstart', ()=>{
+      clearTimeout(longPressTimer);
+      longPressTimer = setTimeout(()=> endPrank(), 3000);
+    }, {passive:true});
+    const cancelLP = ()=> clearTimeout(longPressTimer);
+    document.addEventListener('touchend', cancelLP, {passive:true});
+    document.addEventListener('touchcancel', cancelLP, {passive:true});
+    window.addEventListener('resize', setVH);
+    window.addEventListener('orientationchange', setVH);
+    replay.addEventListener('touchstart', e=>{ e.preventDefault(); replayPrank(); }, {passive:false});
+    replay.addEventListener('click', e=>{ e.preventDefault(); replayPrank(); }, true);
+  }
+
+  function init(){
+    setVH();
+    bindEvents();
+    startVibrateLoop();
+    setTimeout(()=> notice.classList.remove('show'), 2400);
+  }
+
+  init();
+</script>
+</body>
+</html>
